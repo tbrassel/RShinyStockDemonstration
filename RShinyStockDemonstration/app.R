@@ -7,30 +7,29 @@ library(ggplot2)
 library(dplyr)
 library(readr)
 
-display.mode = "showcase"
-
-# Load data
-
 # Define UI
 ui <- fluidPage(theme = shinytheme("lumen"),
+          #Make horizontal rules show up in the UI
           tags$head(
             tags$style(HTML("hr {border-top: 1px solid #000000;}"))
           ),
                 titlePanel("Yahoo Finance Stock Viewer"),
                 sidebarLayout(
                   sidebarPanel(
+                    #Get the user's desired stock symbol, defaults to Soybean Futures
                     textInput(inputId = "symb", label = h3("Stock Ticker Symbol"), value = "ZS=F"),
                   
+                    #Add a divider
                     hr(),
                     
                     fluidRow(column(3, verbatimTextOutput("value"))),
                     
-                    # Select date range to be plotted
+                    # Select date range to be plotted, set a boundary for the limit's of Yahoo finances data
                     dateRangeInput(inputId = "dates", strong("Date range"), start = "2008-01-01", end = NULL,
                                    min = "2001-01-01", max = NULL)
                   ),
                   
-                  # Output: Description, lineplot, and reference
+                  # Output: Candleplot and reference
                   mainPanel(
                     plotOutput(outputId = "candleplot", height = "800px"),
                     #textOutput(outputId = "desc"),
@@ -41,12 +40,13 @@ ui <- fluidPage(theme = shinytheme("lumen"),
 
 # Define server function
 server <- function(input, output) {
-  
+  # Change the chart title dynamically based in the ticker symbol input
   chartTitle <- reactive({
     req(input$symb)
     paste(input$symb, "Candlestick Chart", sep = " ")
   })
   
+  # Change the data input dynamically based on user input, and check if that input makes sense
   dataInput <- reactive({ 
     req(input$symb)
     req(input$dates)
@@ -55,6 +55,9 @@ server <- function(input, output) {
     df <- tq_get(input$symb, get = "stock.prices", from = input$dates[1], to = input$dates[2])
   })
   
+  # Render a candlestick chart dynamically, and draw a line at the current price. 
+  # To do: add a toggle button for this line
+  # To do: hover to see date information
   output$candleplot <- renderPlot({
     dataInput() %>%
       ggplot(aes(x = date, y = close)) +
@@ -63,7 +66,6 @@ server <- function(input, output) {
       labs(title =  chartTitle(), y = "Closing Price", x = "") + 
       theme_tq()
   })
-  
 }
 
 # Create Shiny object
