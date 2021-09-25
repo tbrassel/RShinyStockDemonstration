@@ -22,11 +22,18 @@ ui <- fluidPage(theme = shinytheme("lumen"),
                     #Add a divider
                     hr(),
                     
-                    fluidRow(column(3, verbatimTextOutput("value"))),
                     
                     # Select date range to be plotted, set a boundary for the limit's of Yahoo finances data
-                    dateRangeInput(inputId = "dates", strong("Date range"), start = "2008-01-01", end = NULL,
-                                   min = "2001-01-01", max = NULL)
+                    dateRangeInput(inputId = "dates", strong("Date range"), start = "2021-08-01", end = NULL,
+                                   min = "2001-01-01", max = NULL),
+                    
+                    hr(),
+                    
+                    # Add a checkbox to toggle the horiozontal line
+                    checkboxInput(inputId = "href",
+                                  label = strong("Show a horizotal reference line at today's closing price."),
+                                  value = FALSE),
+                    
                   ),
                   
                   # Output: Candleplot and reference
@@ -56,15 +63,23 @@ server <- function(input, output) {
   })
   
   # Render a candlestick chart dynamically, and draw a line at the current price. 
-  # To do: add a toggle button for this line
   # To do: hover to see date information
   output$candleplot <- renderPlot({
-    dataInput() %>%
-      ggplot(aes(x = date, y = close)) +
-      geom_candlestick(aes(open = open, high = high, low = low, close = close)) +
-      geom_hline(yintercept = top_n(dataInput(), 1, wt=dataInput()$date)[[6]]) +
-      labs(title =  chartTitle(), y = "Closing Price", x = "") + 
-      theme_tq()
+    # Different plot depending on a toggled button
+    if(input$href){
+      dataInput() %>%
+        ggplot(aes(x = date, y = close)) +
+        geom_candlestick(aes(open = open, high = high, low = low, close = close)) +
+        geom_hline(yintercept = top_n(dataInput(), 1, wt=dataInput()$date)[[6]]) +
+        labs(title =  chartTitle(), y = "Closing Price", x = "") + 
+        theme_tq()
+    } else {
+      dataInput() %>%
+        ggplot(aes(x = date, y = close)) +
+        geom_candlestick(aes(open = open, high = high, low = low, close = close)) +
+        labs(title =  chartTitle(), y = "Closing Price", x = "") + 
+        theme_tq()
+    }
   })
 }
 
